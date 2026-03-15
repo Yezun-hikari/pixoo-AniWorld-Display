@@ -120,7 +120,7 @@ def find_pixoo():
         return PIXOO_IP
     my_ip = get_my_ip()
     prefix = ".".join(my_ip.split(".")[:-1])
-    print(f"Suche Pixoo in {prefix}.x...")
+    print(f"Suche Pixoo in {prefix}.x...", flush=True)
     threads, found = [], []
     for i in range(1, 255):
         t = threading.Thread(target=check_ip, args=(prefix, i, found))
@@ -130,7 +130,7 @@ def find_pixoo():
 
 def perform_login():
     try:
-        print("Hole CSRF-Token...")
+        print("Hole CSRF-Token...", flush=True)
         response = session.get(f"{BASE_URL}/login", timeout=5)
         token_match = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
         if not token_match: return False
@@ -139,7 +139,9 @@ def perform_login():
         login_data = {"csrf_token": csrf_token, "username": USER, "password": PASSWORD}
         res = session.post(f"{BASE_URL}/login", data=login_data, timeout=5)
         return res.status_code == 200 or "dashboard" in res.url
-    except: return False
+    except Exception as e:
+        print(f"Login fehlgeschlagen: {e}", flush=True)
+        return False
 
 def get_downloader_data():
     try:
@@ -149,7 +151,9 @@ def get_downloader_data():
                 response = session.get(f"{BASE_URL}/api/queue", timeout=5)
             else: return None
         return response.json() if response.status_code == 200 else None
-    except: return None
+    except Exception as e:
+        print(f"Fehler beim Abrufen der Downloader-Daten: {e}", flush=True)
+        return None
 
 # --- NEU: EXTRAHIERT SxxExx AUS DER URL ---
 def format_episode_string(active_item):
@@ -200,7 +204,7 @@ def update_display(pixoo, data):
         for y in range(54, 57):
             pixoo.draw_line((2, y), (2 + bar_width, y), (0, 255, 100))
 
-        print(f"Update: {title} {ep_code} ({int(percent)}%)")
+        print(f"Update: {title} {ep_code} ({int(percent)}%)", flush=True)
     else:
         pixoo.draw_text("IDLE", (2, 25), (100, 100, 100))
 
@@ -208,11 +212,12 @@ def update_display(pixoo, data):
 
 # --- MAIN ---
 if __name__ == "__main__":
+    print("Starte Skript...", flush=True)
     pixoo_ip = find_pixoo()
     if not pixoo_ip:
-        print("Kein Pixoo gefunden!"); exit()
+        print("Kein Pixoo gefunden!", flush=True); exit()
 
-    print(f"Verbunden mit Pixoo: {pixoo_ip}")
+    print(f"Verbunden mit Pixoo: {pixoo_ip}", flush=True)
     pixoo = Pixoo(pixoo_ip)
 
     while True:

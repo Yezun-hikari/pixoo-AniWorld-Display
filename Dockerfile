@@ -12,5 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the script into the container
 COPY script.py .
 
+# Unbuffer output for better logging in Docker
+ENV PYTHONUNBUFFERED=1
+
 # Run the script
 CMD ["python", "script.py"]
