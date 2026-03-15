@@ -3,8 +3,24 @@ import time
 import re
 import socket
 import threading
-from pixoo import Pixoo
 import os
+import sys
+from unittest.mock import MagicMock
+
+# Mock tkinter and ImageTk to prevent ImportError in headless environment
+try:
+    import tkinter
+except ImportError:
+    mock_tk = MagicMock()
+    sys.modules["tkinter"] = mock_tk
+    sys.modules["_tkinter"] = mock_tk
+
+try:
+    from PIL import ImageTk
+except ImportError:
+    sys.modules["PIL.ImageTk"] = MagicMock()
+
+from pixoo import Pixoo
 
 # --- KONFIGURATION ---
 BASE_URL = os.getenv("BASE_URL")
