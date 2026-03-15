@@ -22,6 +22,33 @@ except ImportError:
 
 from pixoo import Pixoo
 
+# Robustness hack for Pixoo library
+def robust_get_all_device_configurations(self):
+    try:
+        import requests
+        import json
+        response = requests.post(self._Pixoo__url, json.dumps({
+            'Command': 'Channel/GetAllConf',
+        }), timeout=2)
+        return response.json()
+    except Exception:
+        return {"error_code": 0}
+
+def robust_load_counter(self):
+    try:
+        import requests
+        response = requests.post(self._Pixoo__url, '{"Command": "Draw/GetHttpGifId"}', timeout=2)
+        data = response.json()
+        if data['error_code'] == 0:
+            self._Pixoo__counter = int(data['PicId'])
+            return
+    except Exception:
+        pass
+    self._Pixoo__counter = 1
+
+Pixoo.get_all_device_configurations = robust_get_all_device_configurations
+Pixoo._Pixoo__load_counter = robust_load_counter
+
 # --- KONFIGURATION ---
 BASE_URL = os.getenv("BASE_URL")
 USER = os.getenv("USER")
