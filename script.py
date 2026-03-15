@@ -7,11 +7,11 @@ from pixoo import Pixoo
 import os
 
 # --- KONFIGURATION ---
-BASE_URL = os.getenv("BASE_URL", "http://192.168.178.76:8080")
-USER = os.getenv("USER", "admin")
-PASSWORD = os.getenv("PASSWORD", "sfYg452pmZ*KWGuqVDUJ")
-UPDATE_INTERVAL = int(os.getenv("UPDATE_INTERVAL", "3"))
-PIXOO_IP = os.getenv("PIXOO_IP", "")
+BASE_URL = os.getenv("BASE_URL")
+USER = os.getenv("USER")
+PASSWORD = os.getenv("PASSWORD")
+UPDATE_INTERVAL = int(os.getenv("UPDATE_INTERVAL", 3))
+PIXOO_IP = os.getenv("PIXOO_IP")
 
 session = requests.Session()
 

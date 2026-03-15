@@ -5,8 +5,8 @@ services:
     network_mode: host
     restart: always
     environment:
-      - BASE_URL=http://192.168.178.76:8080
-      - USER=admin
-      - PASSWORD=sfYg452pmZ*KWGuqVDUJ
-      - UPDATE_INTERVAL=3
-      - PIXOO_IP=  # Falls bekannt, hier eintragen, sonst wird automatisch gesucht
+      - BASE_URL=${BASE_URL}
+      - USER=${USER}
+      - PASSWORD=${PASSWORD}
+      - UPDATE_INTERVAL=${UPDATE_INTERVAL:-3}
+      - PIXOO_IP=${PIXOO_IP:-}
