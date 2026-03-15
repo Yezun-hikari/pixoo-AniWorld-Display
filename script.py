@@ -61,7 +61,9 @@ def robust_send_buffer(self):
         return
 
     try:
-        response = requests.post(self._Pixoo__url, json.dumps({
+        if self._Pixoo__buffers_send == 0:
+            print(f"Sende ersten Buffer an {self._Pixoo__url}...", flush=True)
+        payload = {
             'Command': 'Draw/SendHttpGif',
             'PicNum': 1,
             'PicWidth': self.size,
@@ -69,20 +71,25 @@ def robust_send_buffer(self):
             'PicID': self._Pixoo__counter,
             'PicSpeed': 1000,
             'PicData': str(base64.b64encode(bytearray(self._Pixoo__buffer)).decode())
-        }), timeout=2)
-        response.json() # Just to trigger potential error
+        }
+        response = requests.post(self._Pixoo__url, json.dumps(payload), timeout=2)
+        res_json = response.json()
+        if res_json.get("error_code") != 0:
+            print(f"Pixoo Error: {res_json}", flush=True)
         self._Pixoo__buffers_send = self._Pixoo__buffers_send + 1
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Pixoo Push Fehler: {e}", flush=True)
 
 def robust_reset_counter(self):
     import requests
     import json
     if self.simulated: return
     try:
-        requests.post(self._Pixoo__url, json.dumps({'Command': 'Draw/ResetHttpGifId'}), timeout=2).json()
-    except Exception:
-        pass
+        res = requests.post(self._Pixoo__url, json.dumps({'Command': 'Draw/ResetHttpGifId'}), timeout=2).json()
+        if res.get("error_code") != 0:
+            print(f"Pixoo Reset Error: {res}", flush=True)
+    except Exception as e:
+        print(f"Pixoo Reset Fehler: {e}", flush=True)
 
 Pixoo.get_all_device_configurations = robust_get_all_device_configurations
 Pixoo._Pixoo__load_counter = robust_load_counter
