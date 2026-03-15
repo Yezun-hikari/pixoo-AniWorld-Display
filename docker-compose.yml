@@ -1,0 +1,12 @@
+services:
+  pixoo-downloader-info:
+    build: .
+    container_name: pixoo-downloader-info
+    network_mode: host
+    restart: always
+    environment:
+      - BASE_URL=http://192.168.178.76:8080
+      - USER=admin
+      - PASSWORD=sfYg452pmZ*KWGuqVDUJ
+      - UPDATE_INTERVAL=3
+      - PIXOO_IP=  # Falls bekannt, hier eintragen, sonst wird automatisch gesucht
