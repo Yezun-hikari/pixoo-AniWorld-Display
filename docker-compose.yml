@@ -1,7 +1,7 @@
 services:
   pixoo-downloader-info:
     build: .
-    image: pixoo-downloader-info:latest
+    image: pixoo-aniworld-display:local
     container_name: pixoo-downloader-info
     network_mode: host
     restart: always
