@@ -23,23 +23,29 @@ except ImportError:
 from pixoo import Pixoo
 
 # Robustness hack for Pixoo library
+def pixoo_post(url, payload, timeout=2):
+    import requests
+    try:
+        response = requests.post(url, json=payload, timeout=timeout)
+        if response.status_code == 200:
+            try:
+                return response.json()
+            except Exception:
+                return {"error_code": 0}
+        return {"error_code": -1}
+    except Exception as e:
+        raise e
+
 def robust_get_all_device_configurations(self):
     try:
-        import requests
-        import json
-        response = requests.post(self._Pixoo__url, json.dumps({
-            'Command': 'Channel/GetAllConf',
-        }), timeout=2)
-        return response.json()
+        return pixoo_post(self._Pixoo__url, {'Command': 'Channel/GetAllConf'})
     except Exception:
         return {"error_code": 0}
 
 def robust_load_counter(self):
     try:
-        import requests
-        response = requests.post(self._Pixoo__url, '{"Command": "Draw/GetHttpGifId"}', timeout=2)
-        data = response.json()
-        if data['error_code'] == 0:
+        data = pixoo_post(self._Pixoo__url, {'Command': 'Draw/GetHttpGifId'})
+        if data.get('error_code') == 0 and 'PicId' in data:
             self._Pixoo__counter = int(data['PicId'])
             return
     except Exception:
@@ -47,8 +53,6 @@ def robust_load_counter(self):
     self._Pixoo__counter = 1
 
 def robust_send_buffer(self):
-    import requests
-    import json
     import base64
     self._Pixoo__counter = self._Pixoo__counter + 1
     if self.refresh_connection_automatically and self._Pixoo__counter >= self._Pixoo__refresh_counter_limit:
@@ -72,8 +76,7 @@ def robust_send_buffer(self):
             'PicSpeed': 1000,
             'PicData': str(base64.b64encode(bytearray(self._Pixoo__buffer)).decode())
         }
-        response = requests.post(self._Pixoo__url, json.dumps(payload), timeout=2)
-        res_json = response.json()
+        res_json = pixoo_post(self._Pixoo__url, payload)
         if res_json.get("error_code") != 0:
             print(f"Pixoo Error: {res_json}", flush=True)
         self._Pixoo__buffers_send = self._Pixoo__buffers_send + 1
@@ -81,11 +84,9 @@ def robust_send_buffer(self):
         print(f"Pixoo Push Fehler: {e}", flush=True)
 
 def robust_reset_counter(self):
-    import requests
-    import json
     if self.simulated: return
     try:
-        res = requests.post(self._Pixoo__url, json.dumps({'Command': 'Draw/ResetHttpGifId'}), timeout=2).json()
+        res = pixoo_post(self._Pixoo__url, {'Command': 'Draw/ResetHttpGifId'})
         if res.get("error_code") != 0:
             print(f"Pixoo Reset Error: {res}", flush=True)
     except Exception as e:
@@ -226,6 +227,11 @@ if __name__ == "__main__":
 
     print(f"Verbunden mit Pixoo: {pixoo_ip}", flush=True)
     pixoo = Pixoo(pixoo_ip)
+
+    # Sicherstellen, dass wir auf dem richtigen Kanal sind und Counter zurücksetzen
+    print("Initialisiere Pixoo...", flush=True)
+    pixoo.set_channel(3)
+    pixoo._Pixoo__reset_counter()
 
     while True:
         data = get_downloader_data()
