@@ -29,10 +29,14 @@ def pixoo_post(url, payload, timeout=2):
         response = requests.post(url, json=payload, timeout=timeout)
         if response.status_code == 200:
             try:
-                return response.json()
+                data = response.json()
+                # Check for the specific error structure reported by the user
+                if 'errors' in data:
+                    return {"error_code": -1, "details": data}
+                return data
             except Exception:
                 return {"error_code": 0}
-        return {"error_code": -1}
+        return {"error_code": -1, "status": response.status_code}
     except Exception as e:
         raise e
 
@@ -143,8 +147,12 @@ def get_my_ip():
 def check_ip(ip_prefix, i, results):
     ip = f"{ip_prefix}.{i}"
     try:
-        r = requests.post(f"http://{ip}/post", json={"Command": "Device/GetDeviceTime"}, timeout=0.2)
-        if r.status_code == 200: results.append(ip)
+        r = requests.post(f"http://{ip}/post", json={"Command": "Device/GetDeviceTime"}, timeout=0.5)
+        if r.status_code == 200:
+            data = r.json()
+            # Validiere, dass es wirklich ein Pixoo ist (typischerweise error_code 0)
+            if 'error_code' in data:
+                results.append(ip)
     except: pass
 
 def find_pixoo():
