@@ -46,8 +46,48 @@ def robust_load_counter(self):
         pass
     self._Pixoo__counter = 1
 
+def robust_send_buffer(self):
+    import requests
+    import json
+    import base64
+    self._Pixoo__counter = self._Pixoo__counter + 1
+    if self.refresh_connection_automatically and self._Pixoo__counter >= self._Pixoo__refresh_counter_limit:
+        self._Pixoo__reset_counter()
+        self._Pixoo__counter = 1
+
+    if self.simulated:
+        self._Pixoo__simulator.display(self._Pixoo__buffer, self._Pixoo__counter)
+        self._Pixoo__buffers_send = self._Pixoo__buffers_send + 1
+        return
+
+    try:
+        response = requests.post(self._Pixoo__url, json.dumps({
+            'Command': 'Draw/SendHttpGif',
+            'PicNum': 1,
+            'PicWidth': self.size,
+            'PicOffset': 0,
+            'PicID': self._Pixoo__counter,
+            'PicSpeed': 1000,
+            'PicData': str(base64.b64encode(bytearray(self._Pixoo__buffer)).decode())
+        }), timeout=2)
+        response.json() # Just to trigger potential error
+        self._Pixoo__buffers_send = self._Pixoo__buffers_send + 1
+    except Exception:
+        pass
+
+def robust_reset_counter(self):
+    import requests
+    import json
+    if self.simulated: return
+    try:
+        requests.post(self._Pixoo__url, json.dumps({'Command': 'Draw/ResetHttpGifId'}), timeout=2).json()
+    except Exception:
+        pass
+
 Pixoo.get_all_device_configurations = robust_get_all_device_configurations
 Pixoo._Pixoo__load_counter = robust_load_counter
+Pixoo._Pixoo__send_buffer = robust_send_buffer
+Pixoo._Pixoo__reset_counter = robust_reset_counter
 
 # --- KONFIGURATION ---
 BASE_URL = os.getenv("BASE_URL")
