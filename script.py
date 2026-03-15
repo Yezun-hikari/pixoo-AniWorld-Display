@@ -92,10 +92,34 @@ def robust_reset_counter(self):
     except Exception as e:
         print(f"Pixoo Reset Fehler: {e}", flush=True)
 
+def robust_set_channel(self, channel):
+    if self.simulated: return
+    try:
+        pixoo_post(self._Pixoo__url, {
+            'Command': 'Channel/SetIndex',
+            'SelectIndex': int(channel)
+        })
+    except Exception as e:
+        print(f"Pixoo SetChannel Fehler: {e}", flush=True)
+
+def robust_set_brightness(self, brightness):
+    if self.simulated: return
+    try:
+        from pixoo.utilities import clamp
+        brightness = clamp(brightness, 0, 100)
+        pixoo_post(self._Pixoo__url, {
+            'Command': 'Channel/SetBrightness',
+            'Brightness': brightness
+        })
+    except Exception as e:
+        print(f"Pixoo SetBrightness Fehler: {e}", flush=True)
+
 Pixoo.get_all_device_configurations = robust_get_all_device_configurations
 Pixoo._Pixoo__load_counter = robust_load_counter
 Pixoo._Pixoo__send_buffer = robust_send_buffer
 Pixoo._Pixoo__reset_counter = robust_reset_counter
+Pixoo.set_channel = robust_set_channel
+Pixoo.set_brightness = robust_set_brightness
 
 # --- KONFIGURATION ---
 BASE_URL = os.getenv("BASE_URL")
