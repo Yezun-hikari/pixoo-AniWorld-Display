@@ -211,6 +211,43 @@ def format_episode_string(active_item):
     curr_ep = str(active_item.get('current_episode', 0)).zfill(3)
     return f"Episode {curr_ep}"
 
+def get_text_width(text):
+    return len(text) * 4
+
+def wrap_text(text, max_width=60):
+    lines = []
+    words = text.split(' ')
+
+    # Erste Zeile
+    line1 = ""
+    while words and get_text_width((line1 + " " + words[0]).strip()) <= max_width:
+        line1 = (line1 + " " + words.pop(0)).strip()
+
+    if not line1 and words:
+        chars = max_width // 4
+        line1 = words[0][:chars]
+        words[0] = words[0][chars:]
+
+    lines.append(line1)
+
+    if not words:
+        return lines
+
+    # Zweite Zeile
+    line2 = ""
+    while words and get_text_width((line2 + " " + words[0]).strip()) <= max_width:
+        line2 = (line2 + " " + words.pop(0)).strip()
+
+    if words:
+        if not line2:
+            line2 = words[0]
+        while get_text_width(line2 + "...") > max_width and len(line2) > 0:
+            line2 = line2[:-1]
+        line2 = (line2.strip() + "...")
+
+    lines.append(line2)
+    return lines
+
 def update_display(pixoo, data):
     pixoo.fill((0, 0, 0))
 
@@ -222,12 +259,12 @@ def update_display(pixoo, data):
 
     if active_item:
         title = active_item.get('title', 'Download')
-        display_title = (title[:12] + '..') if len(title) > 12 else title
+        title_lines = wrap_text(title, 60)
 
         # SxxExx Info generieren
         ep_code = format_episode_string(active_item)
         # Fortschritt (z.B. "4/10")
-        prog_info = f"{active_item.get('current_episode')}/{active_item.get('total_episodes')}"
+        prog_info = f"Ep {active_item.get('current_episode')}/{active_item.get('total_episodes')}"
 
         # Prozent und Bandbreite aus ffmpeg_progress
         ffmpeg_data = data.get('ffmpeg_progress', {})
@@ -235,20 +272,22 @@ def update_display(pixoo, data):
         bandwidth = ffmpeg_data.get('bandwidth', '0.0 MB/s')
 
         # UI ZEICHNEN
-        pixoo.draw_text(display_title, (2, 2), (255, 180, 0))         # Titel (Gelb/Orange)
-        pixoo.draw_text(ep_code, (2, 14), (0, 255, 255))              # SxxExxx (Cyan)
-        pixoo.draw_text(f"Ep {prog_info}", (2, 26), (150, 150, 150))  # 4/10 (Grau)
+        # Titel (Gelb/Orange)
+        pixoo.draw_text(title_lines[0], (2, 2), (255, 180, 0))
+        if len(title_lines) > 1:
+            pixoo.draw_text(title_lines[1], (2, 10), (255, 180, 0)) # 3px Gap
 
-        # Prozent und Bandbreite (ca. 5px über dem Balken bei y=54)
-        # Wir nutzen y=42 (54 - 5 gap - ~7 font height)
-        pixoo.draw_text(f"{int(percent)}%", (2, 42), (255, 255, 255))
+        pixoo.draw_text(ep_code, (2, 22), (0, 255, 255))              # SxxExxx (Cyan)
+        pixoo.draw_text(prog_info, (2, 34), (150, 150, 150))          # Ep 4/10 (Grau)
 
-        # Bandbreite rechtsbündig (geschätzt: 4px pro Zeichen + 1px Abstand)
+        # Prozent und Bandbreite (3px über dem Balken bei y=54) -> y=46
+        pixoo.draw_text(f"{int(percent)}%", (2, 46), (255, 255, 255))
+
+        # Bandbreite rechtsbündig
         bw_x = 62 - (len(bandwidth) * 4)
-        pixoo.draw_text(bandwidth, (bw_x, 42), (255, 255, 255))
+        pixoo.draw_text(bandwidth, (bw_x, 46), (255, 255, 255))
 
         # Ladebalken ganz unten (y=54 bis 56)
-        # Hintergrund für den Balken (Dunkelgrau)
         for y in range(54, 57):
             pixoo.draw_line((2, y), (61, y), (40, 40, 40))
 
