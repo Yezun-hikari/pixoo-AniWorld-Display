@@ -118,12 +118,23 @@ def robust_set_brightness(self, brightness):
     except Exception as e:
         print(f"Pixoo SetBrightness Fehler: {e}", flush=True)
 
+def robust_set_screen_on(self, on):
+    if self.simulated: return
+    try:
+        pixoo_post(self._Pixoo__url, {
+            'Command': 'Channel/OnOffScreen',
+            'OnOff': 1 if on else 0
+        })
+    except Exception as e:
+        print(f"Pixoo SetScreenOn Fehler: {e}", flush=True)
+
 Pixoo.get_all_device_configurations = robust_get_all_device_configurations
 Pixoo._Pixoo__load_counter = robust_load_counter
 Pixoo._Pixoo__send_buffer = robust_send_buffer
 Pixoo._Pixoo__reset_counter = robust_reset_counter
 Pixoo.set_channel = robust_set_channel
 Pixoo.set_brightness = robust_set_brightness
+Pixoo.set_screen_on = robust_set_screen_on
 
 # --- KONFIGURATION ---
 BASE_URL = os.getenv("BASE_URL")
@@ -252,8 +263,7 @@ def update_display(pixoo, data):
     pixoo.fill((0, 0, 0))
 
     if not data or 'items' not in data:
-        pixoo.draw_text("Warte...", (2, 25), (100, 100, 100))
-        pixoo.push(); return
+        return False
 
     active_item = next((item for item in data['items'] if item['status'] == "running"), None)
 
@@ -299,9 +309,10 @@ def update_display(pixoo, data):
 
         print(f"Update: {title} {ep_code} ({int(percent)}%) - {bandwidth}", flush=True)
     else:
-        pixoo.draw_text("IDLE", (2, 25), (100, 100, 100))
+        return False
 
     pixoo.push()
+    return True
 
 # --- MAIN ---
 if __name__ == "__main__":
@@ -318,7 +329,21 @@ if __name__ == "__main__":
     pixoo.set_channel(3)
     pixoo._Pixoo__reset_counter()
 
+    screen_on = True
+
     while True:
         data = get_downloader_data()
-        update_display(pixoo, data)
+        is_active = update_display(pixoo, data)
+
+        if is_active and not screen_on:
+            print("Download gestartet, schalte Pixoo ein...", flush=True)
+            pixoo.set_screen_on(True)
+            screen_on = True
+            # Nochmal update_display aufrufen, damit das Bild sofort da ist nach dem Einschalten?
+            # Eigentlich wurde es gerade schon aufgerufen und gepusht.
+        elif not is_active and screen_on:
+            print("Kein aktiver Download, schalte Pixoo aus...", flush=True)
+            pixoo.set_screen_on(False)
+            screen_on = False
+
         time.sleep(UPDATE_INTERVAL)
